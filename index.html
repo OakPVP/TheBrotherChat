@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>The Brother Chat</title>
     <style>
-        /* CSS stays inside HTML for easy one-file use */
         * { box-sizing: border-box; transition: background 0.3s, color 0.3s; }
         body.light-theme { background-color: aquamarine; color: #333; }
         body.dark-theme { background-color: #2c2f33; color: #ffffff; }
@@ -36,8 +35,6 @@
             Michel: <span id="michel-status" style="color: #dc3545;">Offline</span>
         </div>
     </div>
-
-    <!-- Direct link to a Discord Message Sound -->
     <audio id="notif-sound" preload="auto">
         <source src="https://githubusercontent.com" type="audio/mpeg">
     </audio>
@@ -60,8 +57,6 @@
                 s.textContent = 'Online';
                 s.style.color = "#28a745";
                 b.textContent = `${name} Offline`;
-                
-                // Forces the sound to restart and play on click
                 audio.currentTime = 0; 
                 audio.play().catch(e => console.log("Playback failed:", e));
             } else {
