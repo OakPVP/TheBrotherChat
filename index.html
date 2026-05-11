@@ -101,4 +101,127 @@
 </script>
 
 </body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>The Brother Chat</title>
+    <style>
+        * { box-sizing: border-box; transition: background 0.3s, color 0.3s; }
+        body.light-theme { background-color: aquamarine; color: #333; }
+        body.dark-theme { background-color: #2c2f33; color: #ffffff; }
+        body { margin: 0; font-family: Verdana, sans-serif; overflow-x: hidden; }
+        .title { font-size: 30px; text-align: center; margin-top: 20px; }
+        .theme-toggle { position: absolute; top: 20px; left: 20px; padding: 8px 12px; cursor: pointer; border-radius: 5px; border: 1px solid #333; }
+        .status-box-container { position: absolute; top: 15px; right: 15px; width: 280px; }
+        .statusbox { padding: 30px 15px; border: 3px solid; border-radius: 15px; width: 100%; }
+        .light-theme .statusbox { background-color: burlywood; border-color: salmon; }
+        .dark-theme .statusbox { background-color: #23272a; border-color: #7289da; }
+        .combined-status { position: absolute; top: 50%; left: 15px; transform: translateY(-50%); font-weight: bold; font-size: 14px; white-space: nowrap; }
+        .button-container { position: fixed; bottom: 25px; right: 25px; display: flex; flex-direction: column; gap: 12px; }
+        
+        /* Updated button styling to look more "clickable" */
+        .my-button { cursor: pointer; padding: 12px; border: 2px solid; border-radius: 10px; font-weight: bold; width: 160px; outline: none; }
+        .my-button:active { transform: scale(0.95); }
+        .light-theme .my-button { background: white; border-color: #333; }
+        .dark-theme .my-button { background: #4f545c; border-color: #7289da; color: white; }
+        .btn-noah { color: #007bff; }
+        .btn-michel { color: #ff7f50; }
+    </style>
+</head>
+<body class="light-theme">
+
+<div class="title">The Brother Chat</div>
+<button class="theme-toggle" onclick="toggleTheme()">Switch Theme</button>
+
+<div class="status-box-container">
+    <div class="statusbox"></div>
+    <div class="combined-status">
+        Noah: <span id="noah-status" style="color: #dc3545;">Offline</span> | 
+        Michel: <span id="michel-status" style="color: #dc3545;">Offline</span>
+    </div>
+</div>
+
+<audio id="notif-sound" preload="auto">
+    <source src="https://myinstants.com" type="audio/mpeg">
+</audio>
+
+<div class="button-container">
+    <button id="noah-btn" class="my-button btn-noah" onclick="ts('noah')">Noah: Set Online</button>
+    <button id="michel-btn" class="my-button btn-michel" onclick="ts('michel')">Michel: Set Online</button>
+</div>
+
+<script>
+    const API_URL = 'https://npoint.io';
+    let lastStatus = { noah: "Offline", michel: "Offline" };
+
+    async function ts(user) {
+        try {
+            // Disable button briefly to prevent double-clicking
+            const btn = document.getElementById(user + '-btn');
+            btn.disabled = true;
+
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            
+            // Toggle logic: If they are offline, set to online.
+            data[user] = (data[user] === 'Online') ? 'Offline' : 'Online';
+
+            await fetch(API_URL, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            syncUI(data);
+            btn.disabled = false;
+        } catch (e) {
+            console.error("Update failed", e);
+            document.getElementById(user + '-btn').disabled = false;
+        }
+    }
+
+    async function checkGlobalStatus() {
+        try {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            
+            // Notification logic
+            if ((data.noah === "Online" && lastStatus.noah === "Offline") || 
+                (data.michel === "Online" && lastStatus.michel === "Offline")) {
+                const audio = document.getElementById('notif-sound');
+                audio.currentTime = 0;
+                audio.play().catch(e => {});
+            }
+
+            lastStatus = data;
+            syncUI(data);
+        } catch (e) {}
+    }
+
+    function syncUI(data) {
+        ['noah', 'michel'].forEach(u => {
+            const s = document.getElementById(u + '-status');
+            const b = document.getElementById(u + '-btn');
+            const name = u.charAt(0).toUpperCase() + u.slice(1);
+            
+            s.textContent = data[u];
+            s.style.color = (data[u] === 'Online') ? "#28a745" : "#dc3545";
+            
+            // Fix: Button text now correctly says what it WILL do
+            b.textContent = `${name}: Set ${data[u] === 'Online' ? 'Offline' : 'Online'}`;
+        });
+    }
+
+    function toggleTheme() {
+        document.body.classList.toggle('dark-theme');
+        document.body.classList.toggle('light-theme');
+    }
+
+    setInterval(checkGlobalStatus, 3000);
+    checkGlobalStatus();
+</script>
+
+</body>
 </html>
+
