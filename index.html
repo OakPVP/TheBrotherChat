@@ -25,51 +25,86 @@
 </head>
 <body class="light-theme">
 
-    <div class="title">The Brother Chat</div>
-    <button class="theme-toggle" onclick="toggleTheme()">Switch Theme</button>
+<div class="title">The Brother Chat</div>
+<button class="theme-toggle" onclick="toggleTheme()">Switch Theme</button>
 
-    <div class="status-box-container">
-        <div class="statusbox"></div>
-        <div class="combined-status">
-            Noah: <span id="noah-status" style="color: #dc3545;">Offline</span> | 
-            Michel: <span id="michel-status" style="color: #dc3545;">Offline</span>
-        </div>
+<div class="status-box-container">
+    <div class="statusbox"></div>
+    <div class="combined-status">
+        Noah: <span id="noah-status" style="color: #dc3545;">Offline</span> | 
+        Michel: <span id="michel-status" style="color: #dc3545;">Offline</span>
     </div>
-    <audio id="notif-sound" preload="auto">
-        <source src="https://githubusercontent.com" type="audio/mpeg">
-    </audio>
+</div>
 
-    <div class="button-container">
-        <button id="noah-btn" class="my-button btn-noah" onclick="ts('noah')">Noah Online</button>
-        <button id="michel-btn" class="my-button btn-michel" onclick="ts('michel')">Michel Online</button>
-    </div>
+<audio id="notif-sound" preload="auto">
+    <source src="https://myinstants.com" type="audio/mpeg">
+</audio>
 
-    <script>
-        function ts(u) {
+<div class="button-container">
+    <button id="noah-btn" class="my-button btn-noah" onclick="ts('noah')">Noah Online</button>
+    <button id="michel-btn" class="my-button btn-michel" onclick="ts('michel')">Michel Online</button>
+</div>
+
+<script>
+    const API_URL = 'https://api.npoint.io/647165828dedd8b354cb';
+    let lastStatus = { noah: "Offline", michel: "Offline" };
+
+    async function ts(user) {
+        const currentStatus = document.getElementById(user + '-status').textContent;
+        const nextStatus = currentStatus === 'Offline' ? 'Online' : 'Offline';
+        
+        try {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            data[user] = nextStatus;
+
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            syncUI(data);
+        } catch (e) {}
+    }
+
+    async function checkGlobalStatus() {
+        try {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+
+            if ((data.noah === "Online" && lastStatus.noah === "Offline") || 
+                (data.michel === "Online" && lastStatus.michel === "Offline")) {
+                const audio = document.getElementById('notif-sound');
+                audio.currentTime = 0;
+                audio.play().catch(e => {});
+            }
+
+            lastStatus = data;
+            syncUI(data);
+        } catch (e) {}
+    }
+
+    function syncUI(data) {
+        ['noah', 'michel'].forEach(u => {
             const s = document.getElementById(u + '-status');
             const b = document.getElementById(u + '-btn');
-            const audio = document.getElementById('notif-sound');
-            
-            const isOffline = s.textContent === 'Offline';
             const name = u.charAt(0).toUpperCase() + u.slice(1);
 
-            if (isOffline) {
-                s.textContent = 'Online';
-                s.style.color = "#28a745";
-                b.textContent = `${name} Offline`;
-                audio.currentTime = 0; 
-                audio.play().catch(e => console.log("Playback failed:", e));
-            } else {
-                s.textContent = 'Offline';
-                s.style.color = "#dc3545";
-                b.textContent = `${name} Online`;
-            }
-        }
+            s.textContent = data[u];
+            s.style.color = data[u] === 'Online' ? "#28a745" : "#dc3545";
+            b.textContent = `${name} ${data[u] === 'Online' ? 'Offline' : 'Online'}`;
+        });
+    }
 
-        function toggleTheme() {
-            document.body.classList.toggle('dark-theme');
-            document.body.classList.toggle('light-theme');
-        }
-    </script>
+    function toggleTheme() {
+        document.body.classList.toggle('dark-theme');
+        document.body.classList.toggle('light-theme');
+    }
+
+    setInterval(checkGlobalStatus, 5000);
+    checkGlobalStatus();
+</script>
+
 </body>
 </html>
