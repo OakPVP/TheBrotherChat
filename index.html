@@ -46,24 +46,21 @@
 </div>
 
 <script>
-    const API_URL = 'https://api.npoint.io/647165828dedd8b354cb';
+    const API_URL = 'https://npoint.io';
     let lastStatus = { noah: "Offline", michel: "Offline" };
 
     async function ts(user) {
-        const currentStatus = document.getElementById(user + '-status').textContent;
-        const nextStatus = currentStatus === 'Offline' ? 'Online' : 'Offline';
-        
         try {
             const res = await fetch(API_URL);
             const data = await res.json();
-            data[user] = nextStatus;
+            const current = document.getElementById(user + '-status').textContent;
+            data[user] = (current === 'Offline') ? 'Online' : 'Offline';
 
             await fetch(API_URL, {
-                method: 'POST',
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-
             syncUI(data);
         } catch (e) {}
     }
@@ -72,14 +69,12 @@
         try {
             const res = await fetch(API_URL);
             const data = await res.json();
-
             if ((data.noah === "Online" && lastStatus.noah === "Offline") || 
                 (data.michel === "Online" && lastStatus.michel === "Offline")) {
                 const audio = document.getElementById('notif-sound');
                 audio.currentTime = 0;
                 audio.play().catch(e => {});
             }
-
             lastStatus = data;
             syncUI(data);
         } catch (e) {}
@@ -90,10 +85,9 @@
             const s = document.getElementById(u + '-status');
             const b = document.getElementById(u + '-btn');
             const name = u.charAt(0).toUpperCase() + u.slice(1);
-
             s.textContent = data[u];
-            s.style.color = data[u] === 'Online' ? "#28a745" : "#dc3545";
-            b.textContent = `${name} ${data[u] === 'Online' ? 'Offline' : 'Online'}`;
+            s.style.color = (data[u] === 'Online') ? "#28a745" : "#dc3545";
+            b.textContent = `${name} ${(data[u] === 'Online') ? 'Offline' : 'Online'}`;
         });
     }
 
@@ -102,7 +96,7 @@
         document.body.classList.toggle('light-theme');
     }
 
-    setInterval(checkGlobalStatus, 5000);
+    setInterval(checkGlobalStatus, 3000);
     checkGlobalStatus();
 </script>
 
